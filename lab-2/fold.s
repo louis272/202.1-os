@@ -150,7 +150,38 @@ _failure:
 ///
 /// - Complexity: O(n) where n is the number of elements in the buffer.
 _foldright:
-  // TODO
+  // Store fp and lr on the stack.
+  stp  x29, x30, [sp, #-64]!
+  mov  x29, sp
+
+_foldright.head:
+  // Check if x2 (n) is zero.
+  cbz  x2, _foldright.ret
+
+  // Decrement x2 (n).
+  sub  x2, x2, #1
+
+  // Multiply x2 (n) by x1 (s) 
+  mul  x5, x2, x1
+
+  // Add x0 (xs) and x5 (n * s) to get the address of the n-th element.
+  add  x6, x0, x5
+
+  // Call the function at x4 (f) with the address of the accumulator (x3) and the address of the n-th element (x6).
+  stp  x0, x1, [sp, #48]   // Store x0 and x1 on the stack to preserve their values.
+  stp  x2, x4, [sp, #32]   // Store x2 and x4 on the stack to preserve their values.
+  str  x3, [sp, #16]       // Store x3 on the stack to preserve its value.
+  mov  x0, x3
+  mov  x1, x6
+  blr  x4
+  ldr  x3, [sp, #16]       // Restore x3 from the stack.
+  ldp  x2, x4, [sp, #32]   // Restore x2 and x4 from the stack.
+  ldp  x0, x1, [sp, #48]   // Restore x0 and x1 from the stack.
+  b    _foldright.head
+
+_foldright.ret:
+  mov  x0, x3
+  ldp  x29, x30, [sp], #64   // Restore fp and lr from the stack.
   ret
 
 /// Inserts the value of `x1` in the binary search tree rooted at `x0`.
@@ -164,8 +195,53 @@ _foldright:
 ///
 /// - Complexity: O(log n) where n is the number of elements in the tree.
 _tree_insert:
-  // TODO
+  // Store fp and lr on the stack.
+  stp  x29, x30, [sp, #-32]!
+  mov  x29, sp
+  stp  x0, x1, [sp, #16]  // Store x0 and x1 on the stack to preserve their values.
+
+  // If x0 is null, allocate a new node.
+  cbz  x0, _tree_insert.alloc
+
+  // Otherwise
+  ldr  x2, [x0, #16]   // Load the value of the current node.
+  cmp  x1, x2
+  blt  _tree_insert.left
+
+_tree_insert.right:
+  ldr  x0, [x0, #8]       // Load rhs in x0
+  bl   _tree_insert
+  mov  x3, x0
+  ldp  x0, x1, [sp, #16]  // Restore x0 and x1 from the stack.
+  str  x3 , [x0, #8]
+  b    _tree_insert.ret
+
+_tree_insert.left:
+  ldr  x0, [x0]           // Load lhs in x0
+  bl   _tree_insert
+  mov  x3, x0
+  ldp  x0, x1, [sp, #16]  // Restore x0 and x1 from the stack.
+  str  x3 , [x0]
+  b    _tree_insert.ret
+
+_tree_insert.alloc:
+  // Allocate memory for a new node.
+  mov  x0, #24
+  mov  x1, #3
+  bl   _aalloc
+
+  // Initialize the new node.
+  ldr  x1, [sp, #24]   // Restore x1 from the stack.
+  mov  x3, #0
+  str  x3, [x0]        // lhs = null
+  str  x3, [x0, #8]    // rhs = null
+  str  x1, [x0, #16]   // value = x1
+
+
+_tree_insert.ret:
+  ldp  x29, x30, [sp], #32   // Restore fp and lr from the stack.
   ret
+
 
 /// Computes the sum of the integers stored at the addresses contained in `x0` and `x1` and writes
 /// the result at the address contained in `x0`.

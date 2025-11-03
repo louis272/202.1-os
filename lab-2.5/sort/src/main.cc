@@ -19,5 +19,23 @@ int main() {
 
   for (int i = 0; i < 8; ++i) { std::cout << xs[i] << std::endl; }
 
+  // Test quicksort
+  int arr[] = {10, 7, 8, 9, 1, 5};
+  int n = sizeof(arr) / sizeof(arr[0]);
+
+  std::cout << "Original array: ";
+  for (int i = 0; i < n; ++i) {
+    std::cout << arr[i] << " ";
+  }
+  std::cout << std::endl;
+
+  quicksort(arr, n);
+
+  std::cout << "Sorted array: ";
+  for (int i = 0; i < n; ++i) {
+    std::cout << arr[i] << " ";
+  }
+  std::cout << std::endl;
+
   return 0;
 }

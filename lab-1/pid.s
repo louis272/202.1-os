@@ -9,10 +9,9 @@
 
 .global _start
 _start:
-  // Prints the number stored in w0.
-  mov   x0, #1
-  lsl   x0, x0, #32
-  sub   x0, x0, #1
+  // Obtains the process ID of the program and prints it.
+  mov   w8, #172
+  svc   #0
   bl    _print_nat
 
   // Exit with status 0.
@@ -20,7 +19,7 @@ _start:
   mov   w8, #93
   svc   #0
 
-/// Prints the natural number stored in `x0` followed by a newline.
+// Prints the natural number stored in `x0` followed by a newline.
 _print_nat:
 
   // Writes `\n` at the end of the buffer.
@@ -47,13 +46,9 @@ _print_nat_head:
   // Are we done?
   cbz   x0, _print_nat_n
 
-  // Check if the number is larger than an uint32 integer
-  // cmp   w1, #1
-  // blt   _too_large
-
   // Otherwise, write the next digit in the buffer.
-  udiv  x4, x0, x2      // w4 = w0 / w2
-  msub  x5, x4, x2, x0  // w5 = w0 % w2
+  udiv  x4, x0, x2      // x4 = x0 / x2
+  msub  x5, x4, x2, x0  // x5 = x0 % x2
   mov   x0, x4
   add   x5, x5, #48
   sub   x1, x1, #1
