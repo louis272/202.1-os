@@ -1,7 +1,7 @@
 TARGET := main
 
 BUILD_DIR := build
-SRC := $(shell find src -name *.cc)
+SRC := $(wildcard src/*.cc)
 OBJ := $(SRC:%=build/%.o)
 
 CXX = g++
