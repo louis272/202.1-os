@@ -499,11 +499,19 @@ struct Machine {
     return *rebind<std::uint16_t>(main_memory + 64 + 2);
   }
 
+  /// First address used as a next-fit hint for user mappings.
+  ///
+  /// Stores a 16-bit page-aligned address used by `simple_mmap` as a starting hint. This field
+  /// occupies 2 bytes located immediately after `kbrk` in the first frame.
+  inline std::uint16_t* next_fit() {
+    return rebind<std::uint16_t>(main_memory + 64 + 2 + 2);
+  }
+
   /// The root of the page translation table (aka pbtr).
   ///
   /// This table occupies 8 bytes: 4 x 2 bytes for each entry in the base page table.
   inline std::uint16_t* page_map() {
-    return rebind<std::uint16_t>(main_memory + 64 + 2 + 2);
+    return rebind<std::uint16_t>(main_memory + 64 + 2 + 2 + 2);
   }
 
   /// The number of bits by which an address should be shifted to the right to read the index of
@@ -528,6 +536,9 @@ struct Machine {
 
     // Zero-out the main memory.
     std::fill_n(main_memory, 4096, std::byte{0});
+
+    // Initialize the next-fit hint to 0x1000 (page aligned).
+    *this->next_fit() = 0x1000;
 
     // Initialize the translation table so that addresses from 0xf800 to 0xf8ff map to the first
     // frame of the main memory, which is pinned. This frame is used to store the kernel's main
@@ -749,7 +760,84 @@ struct Machine {
   /// The address of the new mapping is returned as the result of the call.
   VirtualAddress simple_mmap(
     VirtualAddress hint, std::size_t length, PageEntry::Protection protection
-  );
+  ) {
+    // Compute the number of pages needed to cover `length` bytes.
+    std::size_t nbr_pages = (length + 255) / 256;
+
+    VirtualAddress start_address{0}; // Initialize start_address
+
+    if (hint.raw == 0) {
+      // If `hint`is null, chooses the (page-aligned) address
+      start_address = VirtualAddress{*next_fit()};
+    } else {
+	  // If `hint` is not null, pick the page-aligned address nearest to `hint`
+      start_address = hint.page();
+    }
+
+	  // Check that start_address is valid (don't allocate in kernel space or below 0x1000)
+    if (start_address.raw < 0x1000 || start_address.raw >= 0xf800) {
+      start_address = VirtualAddress{0x1000};
+    }
+
+    // Try to find consecutive pages to allocate from start_address
+	  VirtualAddress const search_start_address = start_address;
+	  VirtualAddress current_address = start_address;
+    std::size_t nbr_pages_allocated = 0;
+	  bool is_wrapping = false;
+
+    while (nbr_pages_allocated < nbr_pages) {
+      // Check if we have wrapped around the address space
+      if (is_wrapping && current_address.raw >= search_start_address.raw) {
+        throw std::bad_alloc(); // No sufficient space found
+      }
+
+      // Check if the address is valid (don't allocate in kernel space or below 0x1000)
+      if (current_address.raw < 0x1000 || current_address.raw >= 0xf800) {
+        // If the address is invalid, restart search from 0x1000
+        current_address = VirtualAddress{0x1000};
+        start_address = current_address;
+        nbr_pages_allocated = 0;
+        // As the first start address is always valid, if we are here, we risk wrapping
+        is_wrapping = true;
+      }
+
+      // Check if the page is already allocated
+      bool page_exists = false;
+      try {
+        translate(current_address, protection);
+        page_exists = true;
+      } catch (const PageLookupError& e) {
+        // If a segmentation fault occurs, the page does not exist
+        if (e.cause == SegmentationFault) {
+          page_exists = false;
+        } else {
+          throw;
+        }
+      }
+
+      if (page_exists) {
+        // Page already exists, restart search from next page
+        current_address = current_address.advanced(256);
+        start_address = current_address;
+        nbr_pages_allocated = 0;
+      } else {
+        // Page does not exist, it is free to allocate.
+        current_address = current_address.advanced(256);
+        nbr_pages_allocated++;
+      }
+    }
+
+    // Allocate all pages
+    for (std::size_t i = 0; i < nbr_pages; ++i) {
+      auto page_address = start_address.advanced(i * 256);
+      allocate_page(page_address, protection);
+    }
+
+    // Update next_fit
+    *next_fit() = start_address.advanced(nbr_pages * 256).raw;
+
+    return start_address;
+  }
 
   /// A segfault handlers that simply throws.
   static void rethrow(
