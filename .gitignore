@@ -1,2 +1,12 @@
-.build
+# Project-specific files
+lab-*/build/**
+lab-*/solution/**
+
+# C++
+*.dSYM
+
+# macOS
 .DS_Store
+
+# IDEs
+.vscode

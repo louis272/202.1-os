@@ -1,3 +1,5 @@
+#include "array.hh"
+
 void exchange(int* xs, int p, int q) {
   int x = xs[p];
   xs[p] = xs[q];
