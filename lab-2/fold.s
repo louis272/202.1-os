@@ -418,7 +418,7 @@ _printn:
   bl    _itoa
   mov   w5, #10
   strb  w5, [x0, x2]
-  add   x2, x2, #14
+  add   x2, x2, #1
   mov   x0, #1
   mov   w8, #64
   svc   #0

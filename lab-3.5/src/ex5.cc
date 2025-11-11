@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <cassert>
 
+/// The minimum size of the array for which threads are created during a concurrent sort.
 static inline constexpr std::size_t MIN_SPLIT = 4096;
 
 /// Returns a textual description of the array of size `length` starting at `first`.
