@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Lambda.hh"
-
+#include <cstdint>
+#include <iostream>
 #include <algorithm>
 #include <cassert>
 #include <forward_list>
@@ -115,16 +116,61 @@ struct RoundRobin final : public Scheduler<core_count> {
   static_assert(core_count > 0);
 
 private:
+   /// The tasks to process.
+  TaskList& tasks;
+
+  /// The IDs of the task not yet completed.
+  std::vector<std::size_t> work;
+
+  /// The position of the next task to schedule.
+  std::size_t position = 0; 
+
 public:
 
   /// Initializes the state of a scheduler applying this strategy to process `tasks`.
-  RoundRobin(TaskList& tasks) {
+  RoundRobin(TaskList& tasks) : tasks(tasks) {
     // TODO
+    for (std::size_t i = 0; i < tasks.size(); ++i) { work.push_back(i); }
   }
 
   bool step() {
     // TODO
-    return false;
+
+    // Is there any work left?
+    if (work.empty()) { return false; }
+
+    std::size_t processed = 0;
+
+    while ((processed < core_count) && (position < tasks.size())) {
+      // Pull the next task, which is either ready or running.
+      auto& task = tasks.at(work.at(position));
+      assert(task.state != Task::Terminated);
+
+      // Put all not terminated tasks to ready
+      for (std::size_t i = 0; i < work.size(); ++i) {
+        tasks.at(work.at(i)).state = Task::Ready;
+      }
+
+      // Does the task step?
+      if (lambda::step(task.program)) {
+        task.state = Task::Running;
+        position = (position + 1) % work.size();
+      } else {
+        task.state = Task::Terminated;
+        work.erase(work.begin() + position);
+        
+        // Check if work is empty after erasure
+        if (work.empty()) {
+          return true;
+        }
+
+        position = position % work.size();
+      }
+
+      processed++;
+    } 
+
+    return true;
   }
 
 };
