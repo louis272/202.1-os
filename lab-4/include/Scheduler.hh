@@ -5,7 +5,6 @@
 #include <iostream>
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
 #include <forward_list>
 #include <vector>
 
@@ -46,15 +45,15 @@ struct Scheduler {
   /// This method simulates the progress of the system and is meant to be called repeatedly until
   /// either all tasks have been completed or some timeout has been reached.
   ///
-  /// `step` selects up to `core_count` tasks, moves them to `Task::Running` and steps them. Other
-  /// tasks are moved to `Task::Ready` if they should be scheduled later, or `Task::Terminated` if
-  /// they terminated. A task cannot move to the `Task::Terminated` if it can step.
-  ///
-  /// `step` does not remove nor reorder the elements of `tasks`. Any change to the contents of
-  /// `tasks` between consecutive calls to `step` may trigger undefined behavior.
+  /// At each step, this method selects up to `core_count` tasks, moves them to `Task::Running` and
+  /// steps them. Other tasks are moved to either `Task::Ready`, if they should be scheduled later,
+  /// or `Task::Terminated`, if they terminated. A task cannot move to the `Task::Terminated` if it
+  /// can step.
   ///
   /// The return value is `true` iff at least one task stepped. Otherwise, the result is `false`
   /// and all task are in `Task::Terminated`, meaning that the system can no longer progress.
+  ///
+  /// This method may throw iff one of the tasks has been loaded with an ill-formed program.
   virtual bool step() = 0;
 
 };
@@ -120,7 +119,7 @@ private:
    /// The tasks to process.
   TaskList& tasks;
 
-  /// The IDs of the task not yet completed.
+  /// The IDs of the tasks not terminated.
   std::vector<std::size_t> work;
 
   /// The position of the next task to schedule.
@@ -130,48 +129,50 @@ public:
 
   /// Initializes the state of a scheduler applying this strategy to process `tasks`.
   RoundRobin(TaskList& tasks) : tasks(tasks) {
-    // TODO
+    // Fill `work` with task indices.
     for (std::size_t i = 0; i < tasks.size(); ++i) { work.push_back(i); }
   }
 
   bool step() {
-    // TODO
-
     // Is there any work left?
     if (work.empty()) { return false; }
+    
+    // Put all not terminated tasks to ready
+    for (std::size_t i = 0; i < work.size(); ++i) {
+      tasks.at(work.at(i)).state = Task::Ready;
+    }
 
+    bool stepped = false;
+    const std::size_t to_process = std::min(core_count, work.size());
     std::size_t processed = 0;
 
-    while ((processed < core_count) && (position < tasks.size())) {
+    // While there are still tasks to process and free cores
+    while (processed < to_process) {
       // Pull the next task, which is either ready or running.
       auto& task = tasks.at(work.at(position));
       assert(task.state != Task::Terminated);
-
-      // Put all not terminated tasks to ready
-      for (std::size_t i = 0; i < work.size(); ++i) {
-        tasks.at(work.at(i)).state = Task::Ready;
-      }
 
       // Does the task step?
       if (lambda::step(task.program)) {
         task.state = Task::Running;
         position = (position + 1) % work.size();
+        stepped = true;
       } else {
         task.state = Task::Terminated;
         work.erase(work.begin() + position);
         
         // Check if work is empty after erasure
         if (work.empty()) {
-          return true;
+          break;
         }
 
-        position = position % work.size();
+        position %= work.size();
       }
 
       processed++;
     } 
 
-    return true;
+    return stepped;
   }
 
 };
@@ -183,16 +184,69 @@ struct Priority final : public Scheduler<core_count> {
   static_assert(core_count > 0);
 
 private:
+
+  /// The tasks to process.
+  TaskList& tasks;
+
+  /// The IDs of the tasks not terminated.
+  std::vector<std::size_t> work;
+
+  /// Orders the tasks not terminated by highest priority.
+  std::vector<std::size_t> order_by_priority() const {
+    std::vector<std::size_t> ordered = work;
+    // Create a lambda function to compare priorities of two tasks
+    auto compare_priority = [this](std::size_t a, std::size_t b) {
+      return tasks.at(a).priority > tasks.at(b).priority;
+    };
+
+    // Use the lambda function to sort the tasks by priority
+    std::sort(ordered.begin(), ordered.end(), compare_priority);
+
+    return ordered;
+  }
+
 public:
 
   /// Initializes the state of a scheduler applying this strategy to process `tasks`.
-  Priority(TaskList& tasks) {
-    // TODO
+  Priority(TaskList& tasks) : tasks(tasks) {
+    // Fill `work` with task indices.
+    for (std::size_t i = 0; i < tasks.size(); ++i) { work.push_back(i); }
   }
 
   bool step() {
-    // TODO
-    return false;
+    // Is there any work left?
+    if (work.empty()) { return false; }
+
+    // Put all not terminated tasks to ready
+    for (std::size_t i = 0; i < work.size(); ++i) {
+      tasks.at(work.at(i)).state = Task::Ready;
+    }
+
+    bool stepped = false;
+
+    // Order tasks by priority
+    const std::vector<std::size_t> ordered = order_by_priority();
+
+    std::size_t to_process = std::min(core_count, work.size());
+    
+    // Process the highest priority tasks
+    for (std::size_t i = 0; i < to_process; ++i) {
+        std::size_t idx = ordered.at(i);
+        auto& task = tasks.at(idx);
+        assert(task.state != Task::Terminated);
+
+        // Does the task step?
+        if (lambda::step(task.program)) {
+          task.state = Task::Running;
+          stepped = true;
+        } else {
+          task.state = Task::Terminated;
+          // Put task with idx at the end of work and remove it
+          work.erase(std::remove(work.begin(), work.end(), idx), work.end());
+        }
+    }
+
+    return stepped;
   }
 
 };

@@ -56,8 +56,8 @@ std::pair<std::size_t, std::vector<std::size_t>> test_scheduler(sch::TaskList& t
       expect(!snapshot.at(i).terminated() || tasks.at(i).terminated());
     }
 
-    // There should be at most two running tasks.
-    expect(running.size() <= 2);
+    // There should be at most three running tasks.
+    expect(running.size() <= 3);
 
     fuel--;
   }
@@ -108,6 +108,7 @@ int main() {
     // Create some tasks.
     sch::TaskList tasks = {
       sch::Task{loopy(), 4},
+      sch::Task{loopy(), 4}, // Add a second loopy to test if RoundRobin works correctly
       sch::Task{App{App{church::land(), t}, f}, 3},
       sch::Task{App{App{church::lor(), t}, f}, 2},
       sch::Task{let(0, z, App{s, z}), 1},
@@ -122,17 +123,38 @@ int main() {
       expect(r.second.at(1) > 0);
     };
 
-    // "[RoundRobin]"_test = [ts = tasks] mutable {
-    //   auto r = test_scheduler<sch::RoundRobin, 2>(ts);
-    //
-    //   // All tasks must have stepped at least once.
-    //   auto b = std::all_of(r.second.begin(), r.second.end(), [](auto const& i) { return i > 0; });
-    //   expect(b);
-    // };
+    "[RoundRobin]"_test = [ts = tasks] mutable {
+      auto r = test_scheduler<sch::RoundRobin, 2>(ts);
+    
+      // All tasks must have stepped at least once.
+      auto b = std::all_of(r.second.begin(), r.second.end(), [](auto const& i) { return i > 0; });
+      expect(b);
+    };
 
-    // "[Priority]"_test = [ts = tasks] mutable {
-    //   auto r = test_scheduler<sch::Priority, 2>(ts);
-    // };
+    "[RoundRobin2]"_test = [ts = tasks] mutable {
+      // Test with one core
+      auto r = test_scheduler<sch::RoundRobin, 1>(ts);
+      auto b = std::all_of(r.second.begin(), r.second.end(), [](auto const& i) { return i > 0; });
+      expect(b);
+    };
+
+    "[RoundRobin3]"_test = [ts = tasks] mutable {
+      auto r = test_scheduler<sch::RoundRobin, 3>(ts);
+      auto b = std::all_of(r.second.begin(), r.second.end(), [](auto const& i) { return i > 0; });
+      expect(b);
+    };
+
+    "[Priority]"_test = [ts = tasks] mutable {
+      auto r = test_scheduler<sch::Priority, 2>(ts);
+    };
+
+    "[Priority2]"_test = [ts = tasks] mutable {
+      auto r = test_scheduler<sch::Priority, 1>(ts);
+    };
+
+    "[Priority3]"_test = [ts = tasks] mutable {
+      auto r = test_scheduler<sch::Priority, 3>(ts);
+    };
   };
 
   return 0;
