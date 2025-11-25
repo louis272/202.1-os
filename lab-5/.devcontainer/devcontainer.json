@@ -1,0 +1,6 @@
+{
+  "name": "Lightweight Linux",
+  "build": {
+    "dockerfile": "Dockerfile",
+  },
+}
