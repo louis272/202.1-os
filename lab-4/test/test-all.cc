@@ -132,11 +132,6 @@ int main() {
 
     // "[Priority]"_test = [ts = tasks] mutable {
     //   auto r = test_scheduler<sch::Priority, 2>(ts);
-    //
-    //   // Tasks with higher priority have stepped at least as much as tasks with lower priority.
-    //   for (std::size_t i = ts.size(); i > 2; --i) {
-    //     expect(r.second.at(i - 1) > r.second.at(i - 2));
-    //   }
     // };
   };
 
