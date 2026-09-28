@@ -10,3 +10,8 @@ lab-*/solution/**
 
 # IDEs
 .vscode
+.idea
+
+# Swift
+.swift-version
+swiftly-x86_64.tar.gz
