@@ -28,9 +28,6 @@ Specifically, we'll learn how to:
 - manipulate the stack pointer;
 - allocate and deallocate heap memory.
 
-The estimated duration of this lab is **4 periods**.
-The result of Task 5 must be submitted on [isc.hevs.ch/learn](https://isc.hevs.ch/learn) no later than Sunday 12th October at 23:59 (CEST).
-
 # Setup
 
 Assembly languages typically target a family of related CPUs.
@@ -221,8 +218,3 @@ A usage example is shown below.
 ./compile.sh fold.s
 ./fold sort 1 5 3 7 2
 ```
-
-## Submission
-
-Once you're done, submit your while program, which should the implementations of `_foldright` and `_tree_insert`, on [isc.hevs.ch/learn](https://isc.hevs.ch/learn).
-Your lab will be graded on the basis of the correctness and clarity of your implementation.

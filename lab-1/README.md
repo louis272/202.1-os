@@ -28,9 +28,6 @@ Specifically, we'll learn how to:
 - use general purpose registers to perform simple operations; and
 - perform system calls.
 
-The estimated duration of this lab is **4 periods**.
-The result of Task 5 must be submitted on [isc.hevs.ch/learn](https://isc.hevs.ch/learn) no later than Sunday 28th September at 23:59 (CEST).
-
 # Part 1 -- Setup
 
 ## Task 1 -- Configuring your container
@@ -179,6 +176,3 @@ If your program is correct, the same PID should be displayed twice.
 ```bash
 ./pid & echo $!
 ```
-
-Once you're done, submit your program on [isc.hevs.ch/learn](https://isc.hevs.ch/learn).
-Your lab will be graded on the basis of the correctness and clarity of your implementation.
