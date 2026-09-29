@@ -28,7 +28,11 @@ struct LabSwift {
 /// Returns `true` iff `a` and `b` are stored in memory next to each other.
 func areNeighbors<T, U>(_ a: inout T, _ b: inout U) -> Bool {
   // TODO
-  false
+  withUnsafePointer(to: &a) { (p) in
+    withUnsafePointer(to: &b) { (q) in
+      (p + 1 == q) || (q + 1) == p
+    }
+  }
 }
 
 /// Writes the textual representation of `n` in base `radix` to the standard output.
