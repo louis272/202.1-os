@@ -1,8 +1,8 @@
 ---
 title: "Lab 3 -- Memory Management"
 author: [Dr Dimi Racordon]
-date: "03.11.2025"
-version: "1.0.0"
+date: "12.10.2025"
+version: "2.0.0"
 
 module: "202"
 ue: "202.1"
@@ -24,48 +24,31 @@ TODO {color: Blue}
 
 The objective of this laboratory is to understand how operating systems allocate memory by re-implementing a simplified version of Linux's `mmap` system call.
 
-The estimated duration of this lab is **2 periods**.
-The result of Task 1 must be submitted on [isc.hevs.ch/learn](https://isc.hevs.ch/learn) no later than Sunday 9th November at 23:59 (CEST).
-
 # Setup
 
-You will need a modern C++ compiler to complete this lab.
-You can either install clang or gcc on your own system or use the instructions below to run a C++ compiler using Docker.
+This lab is not platform-specific and can be completed with any installation of Swift 6.3+.
+You can follow the official instructions to install Swift on [Linux](https://www.swift.org/install/linux/), [macOS](https://www.swift.org/install/macos/), and [Windows](https://www.swift.org/install/windows/).
+Alternatively, you can follow the instructions on [this page](https://docs.swift.org/latest/documentation/userdocs/remote-dev/) to run Swift via a DevContainer.
+In any case, **be sure to install Swift 6.3 or higher**!
 
-1. Install [Docker Desktop](https://www.docker.com/) and [Visual Studio Code (VS Code)](https://code.visualstudio.com) on your machine.
-2. In VS Code, install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
-3. Download (or clone using git) the following repository: [https://github.com/ISC-HEI/202.1-os](https://github.com/ISC-HEI/202.1-os).
-4. Open the `lab-3` folder of this repository with VS Code and click on "Reopen in Container" in the bottom-right dialogue. If the dialog does not show, you can press `Ctrl+Shift+P` to open the command palette and type "Reopen in Container".
-   VS Code will reopen and start a Docker container configured to run Linux on a 64-bit ARM architecture (emulated if necessary).
-
-> Make sure to open the lab folder **directly** to let VS Code detect that a Docker container has been configured.
-
-Whether or not you are using Docker, you can check if your system is ready by compiling the existing code with the following command:
+If your system is properly configured, you should be able to run the following command:
 
 ```bash
-make
+swift --version
+```
+
+If everything is configured properly, you should be able to compile and run the Swift package contained in this directory.
+
+```bash
+swift build
+swift run
 ```
 
 # Implementing `mmap`
 
-Open the file `include/mmu.hh` and locate the declaration of `simple_mmap` in line 728.
+Open the file `Sources/Machine.swift` and locate the declaration of the function `mmap`.
 This declaration describes a simplified version of Linux's `mmap` system call.
-Specifically, `simple_mmap` only deals with virtual memory and it cannot map the contents of actual files.
+Specifically, it only deals with virtual memory and it cannot map the contents of actual files.
 
 The specification of the function is described in its comments.
 Your task is to implement its definition.
-
-## Testing
-
-To test your implementation you can uncomment some or all of the tests in `test/test-all.cc`.
-These tests are defined in order of complexity.
-The test suite can be run with the following command:
-
-```bash
-make test
-```
-
-## Submission
-
-Once you're done, submit your modified `mmu.hh` file on [isc.hevs.ch/learn](https://isc.hevs.ch/learn).
-Your lab will be graded on the basis of the correctness and clarity of your implementation.
