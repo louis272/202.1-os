@@ -260,7 +260,59 @@ public struct Machine: ~Copyable {
     byteCount: Int, nearby hint: VirtualAddress, for ps: PagePermissions
   ) -> VirtualAddress? {
     // TODO
-    nil
+    let nb_pages = (byteCount + 255) / 256  // A page is 256 bytes
+    var start_address: VirtualAddress = 0
+
+    if (hint.isNull) {
+      start_address = 0x100  // First (page-aligned) address
+    } else {
+      start_address = hint.page()  // Nearby page
+    }
+
+    // Try to find consecutive pages to allocate from start_address
+    let search_start_address = start_address
+    var current_address = start_address
+    var nb_pages_allocated = 0
+    var has_wrapped = false
+    while (nb_pages_allocated < nb_pages) {
+      // Check if we have wrapped around the address space
+      if (has_wrapped && current_address.rawValue >= search_start_address.rawValue) {
+        return nil  // No sufficient space found
+      }
+
+      // Check if the address is valid
+      if (current_address.rawValue < 0x100 || current_address.rawValue > 0xf800) {
+        // If the address is invalid, restart search from 0x100
+        current_address = 0x100
+        start_address = current_address
+        nb_pages_allocated = 0
+        // As the first start address is always valid, if we are here, we risk wrapping
+        has_wrapped = true
+      }
+
+      // Check if the page is already allocated
+      let no_permissions: PagePermissions = PagePermissions(rawValue: 0)  // Check page with no permissions, because translate check superset of ps
+      let page_exists = (translate(current_address, for: no_permissions) != nil) ? true : false
+
+      if (page_exists) {
+        // Page already exists, restart search from next page
+        current_address = current_address.advanced(by: 256)
+        start_address = current_address
+        nb_pages_allocated = 0
+      } else {
+        // Page does not exist, free to allocate
+        current_address = current_address.advanced(by: 256)
+        nb_pages_allocated += 1
+      }
+    }
+
+    // Allocate all pages
+    for i in 0..<nb_pages {
+      let page_address = start_address.advanced(by: UInt16(i * 256))
+      allocate(page_address, for: ps)
+    }
+
+    return start_address
   }
 
   /// Information about an entry in a page directory.
