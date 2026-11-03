@@ -38,6 +38,8 @@ swift --version
 ```
 
 If everything is configured properly, you should be able to compile and run the Swift package contained in this directory.
+Download (or clone using git) the following repository: [https://github.com/ISC-HEI/202.1-os](https://github.com/ISC-HEI/202.1-os) and navigate to the `lab-3` directory.
+Then, run the following commands:
 
 ```bash
 swift build

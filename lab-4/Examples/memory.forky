@@ -1,0 +1,8 @@
+// Addresses are just integers in the range 0 ..< 1024.
+let a = 12 ;
+
+// Write 3 at `a`.
+let _ = (*a = 3) ;
+
+// Read 3 from `a`.
+*a

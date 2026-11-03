@@ -1,0 +1,16 @@
+let increment = (x) => x + 1 ;
+
+// Fork the current process.
+let p = fork ;
+
+// From there onward, two processes execute the code. The value of `p` determines whether we are
+// running the parent or the child:
+// - For the child, `p` is equal to 0.
+// - For the parent, `p` is equal to the identity of the child.
+
+if p == 0 then
+  // The child computes `2 + 1`.
+  increment 2
+else
+  // The parent waits for its child's result and incremented it once more.s
+  increment (wait p)

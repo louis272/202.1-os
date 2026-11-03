@@ -1,0 +1,3 @@
+// The application of a function that increments its argument.
+let increment = (x) => x + 1 ;
+increment 41

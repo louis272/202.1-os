@@ -1,8 +1,8 @@
 ---
-title: "Lab 4 -- Schedulers"
+title: "Lab 4 -- Forky"
 author: [Dr Dimi Racordon]
-date: "18.11.2025"
-version: "1.0.0"
+date: "2.11.2025"
+version: "2.0.0"
 
 module: "202"
 ue: "202.1"
@@ -22,69 +22,131 @@ TODO {color: Blue}
 
 # Objective
 
-The objective of this laboratory is to understand how operating systems schedule tasks.
-
-The estimated duration of this lab is **4 periods**.
-The result of your work must be submitted on [isc.hevs.ch/learn](https://isc.hevs.ch/learn) no later than Sunday 23rd November at 23:59 (CEST).
+The objective of this laboratory is to familiarize yourself with the forking mechanism of Linux.
 
 # Setup
 
-You will need a modern C++ compiler to complete this lab.
-You can either install clang or gcc on your own system or use the instructions below to run a C++ compiler using Docker.
+This lab is not platform-specific and can be completed with any installation of Swift 6.3+.
+You can follow the official instructions to install Swift on [Linux](https://www.swift.org/install/linux/), [macOS](https://www.swift.org/install/macos/), and [Windows](https://www.swift.org/install/windows/).
+Alternatively, you can follow the instructions on [this page](https://docs.swift.org/latest/documentation/userdocs/remote-dev/) to run Swift via a DevContainer.
+In any case, **be sure to install Swift 6.3 or higher**!
 
-1. Install [Docker Desktop](https://www.docker.com/) and [Visual Studio Code (VS Code)](https://code.visualstudio.com) on your machine.
-2. In VS Code, install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
-3. Download (or clone using git) the following repository: [https://github.com/ISC-HEI/202.1-os](https://github.com/ISC-HEI/202.1-os).
-4. Open the `lab-4` folder of this repository with VS Code and click on "Reopen in Container" in the bottom-right dialogue. If the dialog does not show, you can press `Ctrl+Shift+P` to open the command palette and type "Reopen in Container".
-   VS Code will reopen and start a Docker container configured to run Linux on a 64-bit ARM architecture (emulated if necessary).
-
-> Make sure to open the lab folder **directly** to let VS Code detect that a Docker container has been configured.
-
-Whether or not you are using Docker, you can check if your system is ready by compiling the existing code with the following command:
+If your system is properly configured, you should be able to run the following command:
 
 ```bash
-make
+swift --version
 ```
 
-# Schedulers
-
-Open the file `include/Scheduler.hh`.
-This header implements some data structures to emulate the behavior of various schedulers for a virtual machine.
-
-The interface of a scheduler is described by the abstract class `Scheduler`, which defines a virtual method `Scheduler::step`, whose specification is described in the comments.
-The template parameter `core_count` describes the number of CPU cores that the virtual machine emulates.
-
-The goal of this laboratory is to implement schedulers satisfying this interface.
-An example is given with the struct `FCFS` in line 63, which implements a first come first serve strategy.
-
-## Task 1 — Round-robin
-
-Open the file `include/Scheduler.hh` and locate the declaration of the `RoundRobin` struct in line 114.
-This struct is meant to implement a round-robin scheduler.
-
-Your task is to implement the struct's constructor and the method `RoundRobin::step`.
-
-## Task 2 — Priority scheduling
-
-Open the file `include/Scheduler.hh` and locate the declaration of the `Priority` struct in line 135.
-This struct is meant to implement a round-robin scheduler.
-
-Your task is to implement the struct's constructor and the method `Priority::step`.
-The priority of a task is described by the field `Task::priority`, declared in line 20.
-
-## Testing
-
-To test your implementation you can uncomment some or all of the tests in `test/test-all.cc`.
-The test suite can be run with the following command:
+If everything is configured properly, you should be able to compile and run the Swift package contained in this directory.
+Download (or clone using git) the following repository: [https://github.com/ISC-HEI/202.1-os](https://github.com/ISC-HEI/202.1-os) and navigate to the `lab-4` directory.
+Then, run the following commands:
 
 ```bash
-make test
+swift build
+swift run
 ```
 
-Don't hesitate to write additional tests.
-Your submission will be tested on the tests in `test/test-all.cc` and additional "hidden" test cases.
+# Forky
 
-## Submission
+Forky is a toy language designed to illustrate the forking mechanism of Linux.
+A Forky program is a single term of the following grammar, where `x` denotes variables, `boolean-literal` denotes Boolean literals (i.e., `true` and `false`), and `integer-literal` denotes any integer literal (e.g, `42` or `-2`).
 
-Once you're done, submit your modified `Scheduler.hh` file on [isc.hevs.ch/learn](https://isc.hevs.ch/learn).
-Your lab will be graded on the basis of the correctness and clarity of your implementation.
+```
+e ::=
+  boolean-literal
+  integer-literal
+  x
+  e e
+  (x) => e
+  'let' x = e ; e
+  'if' e 'then' e 'else' e
+  *e
+  *e = e
+  'fork'
+  'wait' e
+  binary
+
+binary ::=
+  e + e
+  e - e
+  e == e
+  e != e
+  e < e
+  e > e
+```
+
+You can run a Forky program using its command-line interpreter:
+
+```bash
+swift run forky main.forky
+```
+
+*Note: the command `swift run` compiles and run the binary named `forky`. Alternatively, you may compile `forky` first with `swift build` and then run it directly. Binaries compield by Swift Package Manager are found in `.build/debug` or `.build/release`*
+
+A term of the form `(x) => e` declares an anonymous function that takes a single parameter and returns the value computed by `e`.
+Function application is expressed by placing two terms next to each others.
+For example, the following program evaluates to 2:
+
+```
+// A simple function and its application.
+((x) => x + 1) 1
+```
+
+A term of the form `let x = e1 ; e2` declares a local variable `x` assigned to the result of `e1` and visible in `e2`.
+For example, the following program gives a name to the anonymous function defined above:
+
+```
+// A simple function bound to a local name.
+let increment = (x) => x + 1 ;
+increment 1
+```
+
+Terms of the form `*e1` and `*e1 = e2` are used to read from and write to memory.
+In both cases, `e1` denotes an address between 0 and 1024, expressed as an integer.
+For example, `*12` evaluates to the value currently stored at address 12 while `*12 = 3` writes 3 to the storage and that address and evaluates to the value that was previously held there.
+The entire memory is initialized to 0 when the program starts.
+The following illustrates with a complete program that evaluates to 3.
+
+```
+let a = 12 ;
+let x = (*a = 3) ;
+*a
+```
+
+A term of the form `fork` forks the current process.
+It evaluates to 0 for the child and to an integer representing the child's identity (i.e., its process identifier) for the parent.
+A term of the form `wait e` waits for the completion of the child process identified by `e` and evaluates to the result of tha child.
+For example, the following program forks the main process and has the parent wait for the child to perform some computation before resuming.
+The whole program evaluates to 3.
+
+```
+let increment = (x) => x + 1 ;
+let p = fork ;
+if p == 0 then increment 2 else increment (wait p)
+```
+
+You can see some more program examples in `Examples/`.
+
+# Brains!
+
+Open the file `Sources/Forky/Interpreter.swift`, which implements a virtual machine interpreting Forky programs, and locate the function named `zombies`.
+This function is supposed to return the list of zombie processes.
+Your objective is to implement it.
+
+To test your result, you can run a Forky program with the option `--zombie`, which will print the identities returned by `Interpreter.zombie` after running a program.
+
+```bash
+swift run forky --zombies Examples/memory.forky
+```
+
+# Wait with options
+
+On Linux, `wait` is slightly more sophisticated than Forky's implementation.
+Your objective is to bring some of these features to Forky.
+
+In `Sources/Forky/Interpreter.swift`, locate the function named `wait`, which implements the semantics of terms having the form `wait e`.
+Modify this function such that if `e` is equal to 0, then the process waits for any child having an an identity.
+
+# Concurrent increment
+
+Write a Forky program that increments a shared counter to 100 using using at least two processes.
