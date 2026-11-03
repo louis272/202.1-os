@@ -228,10 +228,10 @@ struct Interpreter {
       processes[executing] = (r, k)
       children[executing] &= (1 << child)
       allocated &= ~(1 << child)
-      return .processing
+      return next()
 
     default:
-      return .processing
+      return next()
     }
   }
 

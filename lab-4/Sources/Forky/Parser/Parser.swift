@@ -149,8 +149,17 @@ struct Parser {
   /// Parses a an abstraction iff possible; otherwise, parses a parenthesized term.
   private mutating func parseAbstractionOrParenthesizedTerm() throws -> Term {
     let _ = try take(.leftParenthesis) ?? expected("'('")
-    let x = try take(.identifier).map(Either.left) ?? Either.right(parseTerm())
-    let _ = try take(.rightParenthesis) ?? expected("')'")
+
+    let backup = self
+    var x = try take(.identifier).map(Either.left) ?? Either.right(parseTerm())
+
+    // If the next token is not a right parenthesis, then it may be that we have parsed part of a
+    // term rather than just an identifier or parameter.
+    if take(.rightParenthesis) == nil {
+      self = backup
+      x = try .right(parseTerm())
+      let _ = try take(.rightParenthesis) ?? expected("')'")
+    }
 
     switch x {
     case .left(let n) where take(.arrow) != nil:
