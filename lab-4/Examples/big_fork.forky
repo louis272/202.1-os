@@ -1,0 +1,40 @@
+let increment = (x) => x + 1 ;
+
+// Fork the current process.
+let p = fork ;
+
+if p == 0 then
+  // The first child computes a lot, it should not be picked by wait.
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+  increment 2
+else
+  // The parent creates a second child.
+  let q = fork ;
+
+  if q == 0 then
+    // The second child computes `3 + 1`.
+    increment 3
+  else
+    // The parent creates a third child.
+    let r = fork ;
+
+    if r == 0 then
+      // The third child computes `4 + 1`.
+      increment 4
+    else
+      // The parent waits for all three children.
+      (wait 0)

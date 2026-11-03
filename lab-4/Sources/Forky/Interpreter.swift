@@ -265,22 +265,48 @@ struct Interpreter {
   /// Executes the semantics of a redex waiting for `child` and resuming `k`, prepares the machine
   /// for the next step, and returns its status.
   private mutating func wait(_ child: Int, then k: Continuation) -> Status {
-    // Is the child identity valid?
-    if ((children[executing] & (1 << child)) == 0) { return fail() }
+    // If child is 0, wait for any child
+    if (child == 0) {
+      var hasChild = false
+      for i in 0..<64 {
+        // If the child exists
+        if ((children[executing] & (1 << i)) != 0) {
+          // If this child is terminated, "wait" for it
+          let child = processes[i]
+          let childIsTerminated = child.control.isValue && child.continuation.isEmpty
+          if childIsTerminated { return wait(i, then: k) }
+          
+          // If not terminated, go to the next one
+          hasChild = true
+        }
+      }
 
-    // Did the child terminate?
-    switch processes[child] {
-    case (.error, _):
-      return fail()
+      if !hasChild {
+        return fail()
+      }
 
-    case (let r, let s) where r.isValue && s.isEmpty:
-      processes[executing] = (r, k)
-      children[executing] &= (1 << child)
-      allocated &= ~(1 << child)
       return next()
 
-    default:
-      return next()
+    } else {
+
+      // Is the child identity valid?
+      if ((children[executing] & (1 << child)) == 0) { return fail() }
+
+      // Did the child terminate?
+      switch processes[child] {
+      case (.error, _):
+        return fail()
+
+      case (let r, let s) where r.isValue && s.isEmpty:
+        processes[executing] = (r, k)
+        children[executing] &= (1 << child)
+        allocated &= ~(1 << child)
+        return next()
+
+      default:
+        return next()
+      }
+
     }
   }
 
