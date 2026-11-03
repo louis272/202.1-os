@@ -1,0 +1,23 @@
+// Call-by-value fixed-point combinator that lets a function call itself through `self`
+let rec_f = (f) =>
+  ((x) => f ((y) => (x x) y))
+  ((x) => f ((y) => (x x) y)) ;
+
+let counter = 0 ;
+
+let increment = rec_f ((self) => (n) =>
+  if n == 0 then
+    *counter
+  else
+    let current = *counter ;
+    let _ = *counter = current + 1 ;
+    
+    let p = fork ;
+    if p == 0 then
+      0
+    else
+      let _ = wait p ;
+      self (n + -1)
+) ;
+
+increment 100
