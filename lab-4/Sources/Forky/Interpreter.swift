@@ -50,7 +50,56 @@ struct Interpreter {
 
   /// Returns the processes that are still active but whose parents have terminated.
   func zombies() -> [Int] {
-    [] // TODO
+    // TODO
+    var zombies: [Int] = []
+
+    for i in 0..<64 {
+      let isAllocated = ((allocated >> i) & 1) == 1
+
+      if isAllocated {
+        let process = processes[i]
+        let parentTerminated: Bool
+
+        parentTerminated = process.control.isValue && process.continuation.isEmpty
+
+        // switch process.control {
+        //   case .bool, .int, .variable:
+        //     parentTerminated = process.continuation.isEmpty
+        //   default:
+        //     parentTerminated = false
+        // }
+
+        if parentTerminated {
+          for j in 0..<64 {
+            let isChild: Bool = ((children[i] >> j) & 1) == 1
+
+            if isChild {
+              let isChildAllocated = ((allocated >> j) & 1) == 1
+
+              if isChildAllocated {
+                let child = processes[j]
+                let childTerminated: Bool
+
+                childTerminated = child.control.isValue && child.continuation.isEmpty
+
+                // switch child.control {
+                //   case .bool, .int, .variable:
+                //     childTerminated = child.continuation.isEmpty
+                //   default:
+                //     childTerminated = false
+                // }
+
+                if childTerminated {
+                  zombies.append(j)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return zombies
   }
 
   /// Performs a single evaluation step and returns the status of the machine.
