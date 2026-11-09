@@ -92,3 +92,70 @@ extension Term {
   }
 
 }
+
+extension Term: CustomStringConvertible {
+
+  var description: String {
+    switch self {
+    case .error:
+      "#!"
+    case .bool(let v):
+      v.description
+    case .int(let v):
+      v.description
+    case .variable(let x):
+      "$\(x)"
+    case .abstraction(let e):
+      "λ\(e)"
+    case .application(let f, let a):
+      "\(f) \(a)"
+    case .conditional(let a, let b, let c):
+      "if \(a) then \(b) else \(c)"
+    case .binary(let f, let a, let b):
+      "if \(a) \(f) \(b)"
+    case .read(let a):
+      "*\(a)"
+    case .write(let a, let b):
+      "*\(a) = \(b)"
+    case .fork:
+      "fork"
+    case .wait(let e):
+      "wait \(e)"
+    }
+  }
+
+}
+
+extension String.StringInterpolation {
+
+  /// Appends the string descriptions of the elements in `list` separated by `separator`.
+  mutating func appendInterpolation(term: Term) {
+    let s = term.description
+    if Self.requiresParentheses(s) {
+      appendLiteral("(\(s))")
+    } else {
+      appendLiteral(s)
+    }
+  }
+
+  /// Returns `true` iff `s` contains a space or multiple non-nested groups parentheses.
+  private static func requiresParentheses(_ s: String) -> Bool {
+    var opened = 0
+    for (i, c) in s.enumerated() {
+      switch c {
+      case _ where c.isWhitespace:
+        return true
+      case "(" where (opened == 0) && (i > 0):
+        return true
+      case "(":
+        opened += 1
+      case ")":
+        opened -= 1
+      default:
+        break
+      }
+    }
+    return false
+  }
+
+}

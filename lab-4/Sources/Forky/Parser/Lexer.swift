@@ -88,13 +88,13 @@ struct Lexer {
   /// Consumes and returns a numeric literal iff one can be scanned from the character stream.
   private mutating func takeNumericLiteral() -> Token? {
     let p = take("-") ?? position
-    let q = take(while: \.isDecimalDigit).endIndex
+    let s = take(while: \.isDecimalDigit)
 
-    if p == q {
+    if s.isEmpty {
       position = p
       return nil
     } else {
-      return .init(tag: .int, span: p ..< q)
+      return .init(tag: .int, span: p ..< s.endIndex)
     }
   }
 

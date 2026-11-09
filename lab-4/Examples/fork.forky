@@ -12,5 +12,5 @@ if p == 0 then
   // The child computes `2 + 1`.
   increment 2
 else
-  // The parent waits for its child's result and incremented it once more.s
+  // The parent waits for its child's result and incremented it once more.
   increment (wait p)

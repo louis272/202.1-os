@@ -31,7 +31,7 @@ struct Parser {
   private mutating func parseTerm() throws -> Term {
     var lhs = try parseAddition()
     while let h = peek(), !h.isTermDelimiter {
-      lhs = try .application(lhs, parseTerm())
+      lhs = try .application(lhs, parseAddition())
     }
     return lhs
   }
@@ -51,7 +51,7 @@ struct Parser {
   /// otherwise; parses the operand of such an application.
   private mutating func parseComparison() throws -> Term {
     var lhs = try parseSimple()
-    while let o = take(anyOf: [.eq, .ne]) {
+    while let o = take(anyOf: [.eq, .ne, .lt, .gt]) {
       let rhs = try parseTerm()
       lhs = .binary(BinaryOperator(o.tag)!, lhs, rhs)
     }
@@ -121,7 +121,7 @@ struct Parser {
   /// Parses a read or write term.
   private mutating func parseReadOrWrite() throws -> Term {
     let _ = try take(.star) ?? expected("'*'")
-    let a = try parseTerm()
+    let a = try parseSimple()
     if take(.assign) == nil {
       return .read(from: a)
     } else {
