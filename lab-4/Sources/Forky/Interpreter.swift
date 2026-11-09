@@ -58,16 +58,7 @@ struct Interpreter {
 
       if isAllocated {
         let process = processes[i]
-        let parentTerminated: Bool
-
-        parentTerminated = process.control.isValue && process.continuation.isEmpty
-
-        // switch process.control {
-        //   case .bool, .int, .variable:
-        //     parentTerminated = process.continuation.isEmpty
-        //   default:
-        //     parentTerminated = false
-        // }
+        let parentTerminated: Bool = process.control.isValue && process.continuation.isEmpty
 
         if parentTerminated {
           for j in 0..<64 {
@@ -78,16 +69,7 @@ struct Interpreter {
 
               if isChildAllocated {
                 let child = processes[j]
-                let childTerminated: Bool
-
-                childTerminated = child.control.isValue && child.continuation.isEmpty
-
-                // switch child.control {
-                //   case .bool, .int, .variable:
-                //     childTerminated = child.continuation.isEmpty
-                //   default:
-                //     childTerminated = false
-                // }
+                let childTerminated: Bool = child.control.isValue && child.continuation.isEmpty
 
                 if childTerminated {
                   zombies.append(j)
@@ -212,8 +194,26 @@ struct Interpreter {
     }
   }
 
+  private func isDone(_ p: Int) -> Bool {
+    processes[p].control.isValue && processes[p].continuation.isEmpty
+  } 
+
+  private func isWaiting(_ p: Int) -> Bool {
+    if case .wait = processes[p].control {
+      return true
+    }
+    return false
+  } 
+
   /// Prepares the machine for the next step and returns its status.
   private mutating func next() -> Status {
+    //print(processes[executing].continuation)
+    if !isDone(executing) {
+      if !isWaiting(executing) {
+        return .processing
+      }
+    }
+
     let d = executing + 1
     let a = allocated >> d
     let n = a.trailingZeroBitCount
