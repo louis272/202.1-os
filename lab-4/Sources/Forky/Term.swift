@@ -51,6 +51,8 @@ indirect enum Term: Equatable {
   /// This term evaluates to the identity of the process that has been waited.
   case wait(Term)
 
+  case compareAndSwap(at: Term, old: Term, new: Term)
+
 }
 
 extension Term {
@@ -88,6 +90,8 @@ extension Term {
       return self
     case .wait(let e):
       return .wait(e[v, for: n])
+    case .compareAndSwap(let a, let b, let c):
+      return .compareAndSwap(at: a[v, for: n], old: b[v, for: n], new: c[v, for: n])
     }
   }
 
@@ -115,12 +119,14 @@ extension Term: CustomStringConvertible {
       "if \(a) \(f) \(b)"
     case .read(let a):
       "*\(a)"
-    case .write(let a, let b):
-      "*\(a) = \(b)"
+    case .write(let v, let a):
+      "*\(a) = \(v)"
     case .fork:
       "fork"
     case .wait(let e):
       "wait \(e)"
+    case .compareAndSwap(let a, let u, let v):
+      "*\(a) = \(u) if \(v)"
     }
   }
 

@@ -122,11 +122,22 @@ struct Parser {
   private mutating func parseReadOrWrite() throws -> Term {
     let _ = try take(.star) ?? expected("'*'")
     let a = try parseSimple()
-    if take(.assign) == nil {
-      return .read(from: a)
-    } else {
-      let e = try parseTerm()
-      return .write(e, to: a)
+
+    // Is it a read?
+    if take(.assign) == nil { return .read(from: a) }
+
+    // Is it a write?
+    if take(.swap) == nil {
+      let u = try parseTerm()
+      return .write(u, to: a)
+    }
+
+    // It's a compare-and-swap.
+    else {
+      let u = try parseTerm()
+      let _ = try take(.with) ?? expected("'with'")
+      let v = try parseTerm()
+      return .compareAndSwap(at: a, old: u, new: v)
     }
   }
 

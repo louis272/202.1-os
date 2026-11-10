@@ -110,9 +110,11 @@ struct Lexer {
     case "fork": tag = .fork
     case "if": tag = .if
     case "let": tag = .let
+    case "swap": tag = .swap
     case "then": tag = .then
     case "true": tag = .true
     case "wait": tag = .wait
+    case "with": tag = .with
     default: tag = .identifier
     }
 

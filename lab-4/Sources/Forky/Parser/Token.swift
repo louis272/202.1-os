@@ -14,10 +14,11 @@ struct Token {
     case `fork`
     case `if`
     case `let`
-    case `star`
+    case `swap`
     case `then`
     case `true`
     case `wait`
+    case `with`
 
     // Scalar literals.
     case int
@@ -25,6 +26,7 @@ struct Token {
     // Operators.
     case arrow
     case assign
+    case star
     case add
     case sub
     case eq
@@ -47,7 +49,7 @@ struct Token {
 
   /// `true` iff `self` occurs immediately after a term.
   var isTermDelimiter: Bool {
-    isAnyOf([.rightParenthesis, .semicolon, .assign, .then, .else])
+    isAnyOf([.rightParenthesis, .semicolon, .assign, .then, .else, .with])
   }
 
   /// Returns `true` iff `self`'s tag is contained in `ks`.

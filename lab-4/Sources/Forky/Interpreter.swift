@@ -189,6 +189,27 @@ struct Interpreter {
       processes[executing] = (a, continuation + [{ (r) in .wait(r) }])
       return next()
 
+    case .compareAndSwap(let a, let u, let v) where !a.isValue:
+      processes[executing] =
+        (u, continuation + [{ (r) in .compareAndSwap(at: r, old: u, new: v) }])
+      return next()
+
+    case .compareAndSwap(let a, let u, let v) where !u.isValue:
+      processes[executing] =
+        (u, continuation + [{ (r) in .compareAndSwap(at: a, old: r, new: v) }])
+      return next()
+
+    case .compareAndSwap(let a, let u, let v) where !v.isValue:
+      processes[executing] =
+        (v, continuation + [{ (r) in .compareAndSwap(at: a, old: u, new: r) }])
+      return next()
+
+    case .compareAndSwap(.int(let a), .int(let old), .int(let new)):
+      let now = memory[a]
+      if now == old { memory[a] = new }
+      processes[executing] = (.int(now), continuation)
+      return next()
+
     default:
       return fail()
     }

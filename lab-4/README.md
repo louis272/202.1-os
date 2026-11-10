@@ -62,6 +62,7 @@ e ::=
   'if' e 'then' e 'else' e
   *e
   *e = e
+  *e = 'swap' e 'with' e
   'fork'
   'wait' e
   binary
@@ -112,6 +113,11 @@ let a = 12 ;
 let x = (*a = 3) ;
 *a
 ```
+
+A term of the form `*e1 = swap e2 with e3` performs a so-called *compare-and-swap* update.
+The value of `e3` is written at the address computed by `e1` if and only if the current value at that location is equal to that of `e2`.
+The result of the term is the value that was read from the location, whether it has changed or not.
+The whole operation is performed atomically.
 
 A term of the form `fork` forks the current process.
 It evaluates to 0 for the child and to an integer representing the child's identity (i.e., its process identifier) for the parent.
