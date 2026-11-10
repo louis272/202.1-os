@@ -1,0 +1,31 @@
+let fix = (f) => f f;
+
+let lock = 0;
+
+let counter = 1;
+
+let N = 42;
+
+let acquiring = fix (loop) => (lock) => (f) => (x) =>
+    if (*lock = swap 0 with 1) == 1 then
+        loop loop lock f x
+    else
+        let result = f x;
+        let _ = *lock = 0;
+        result;
+
+let increment = fix (loop) => (m) => (a) =>
+    if m > 0 then
+        let _ = acquiring lock ((_) => *a = (*a + 1)) 0;
+        loop loop (m - 1) a
+    else
+        0;
+
+let p = fork;
+if p == 0 then
+    let _ = increment N counter;
+    1
+else
+    let _ = increment N counter;
+    let _ = wait p;
+    *counter

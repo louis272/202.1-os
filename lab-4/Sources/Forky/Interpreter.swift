@@ -228,12 +228,12 @@ struct Interpreter {
 
   /// Prepares the machine for the next step and returns its status.
   private mutating func next() -> Status {
-    //print(processes[executing].continuation)
-    if !isDone(executing) {
-      if !isWaiting(executing) {
-        return .processing
-      }
-    }
+    // For FCFS next()
+    // if !isDone(executing) {
+    //   if !isWaiting(executing) {
+    //     return .processing
+    //   }
+    // }
 
     let d = executing + 1
     let a = allocated >> d
