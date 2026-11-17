@@ -10,12 +10,6 @@ public struct PetriNet {
     /// The number of token produced, i.e., the number of postconditions.
     public var produced: Int = 0
 
-    /// Creates an instance with the given properties.
-    public init(consumed: Int, produced: Int) {
-      self.consumed = consumed
-      self.produced = produced
-    }
-
   }
 
   /// The number of places in the net.
