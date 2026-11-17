@@ -58,7 +58,16 @@ public struct PetriNet {
   ///
   /// - Requires: `m` assigns each place in `self`.
   public func fireable<S: Sequence<Int>>(_ s: S, from m: Marking) -> Bool {
-    todo()
+    var m_prime = m;
+    for t in s {
+      if fireable(t, from: m_prime) {
+        m_prime = fire(t, from: m_prime);
+      } else {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /// Returns the marking obtained after firing `t` from `m`.
@@ -75,15 +84,47 @@ public struct PetriNet {
   ///
   /// - Requires: `m` assigns each place in `self` and `t` is fireable from `m`.
   public func fire<S: Sequence<Int>>(_ s: S, from m: Marking) -> Marking {
-    todo()
+    var m_prime = m;
+    for t in s {
+      m_prime = fire(t, from: m_prime);
+    }
+
+    return m_prime;
   }
 
   /// Returns a sequence of transitions fireable from `m` that leads to a marking satisfying `phi`
   /// if such marking exists; otherwise, returns `nil`.
   ///
-  /// - Requires: `m` assigns each place in `self` and `t` is fireable from `m`.
-  public func sequence(from m: Marking, toMarkingSatisfying phi: (Marking) -> Bool) -> [Int] {
-    todo()
+  /// - Requires: `m` assigns each place in `self`.
+  public func sequence(from m: Marking, toMarkingSatisfying phi: (Marking) -> Bool) -> [Int]? {
+    if phi(m) {
+      return nil
+    }
+
+    var queue: [(marking: Marking, sequence: [Int])] = [(m, [])]
+    var visited: [Marking] = [m]
+    var index = 0
+
+    while index < queue.count {
+      let current = queue[index]
+      index += 1
+
+      for t in 0..<transitionCount where fireable(t, from: current.marking) {
+        let nextMarking = fire(t, from: current.marking)
+        let nextSequence = current.sequence + [t]
+
+        if phi(nextMarking) {
+          return nextSequence
+        }
+
+        if !visited.contains(nextMarking) {
+          visited.append(nextMarking)
+          queue.append((nextMarking, nextSequence))
+        }
+      }
+    }
+
+    return nil
   }
 
 }
