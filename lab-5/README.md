@@ -1,7 +1,7 @@
 ---
-title: "Lab 5 -- Files"
+title: "Lab 5 -- Petri Nets"
 author: [Dr Dimi Racordon]
-date: "25.11.2025"
+date: "17.11.2025"
 version: "1.0.0"
 
 module: "202"
@@ -22,101 +22,88 @@ TODO {color: Blue}
 
 # Objective
 
-The objective of this laboratory is to familiarize yourself with the File API of Linux.
-
-The estimated duration of this lab is **2 periods**.
-The result of your work must be submitted on [isc.hevs.ch/learn](https://isc.hevs.ch/learn) no later than Sunday 30th November at 23:59 (CEST).
+The objective of this laboratory is to familiarize yourself with the semantics of Petri nets.
 
 # Setup
 
-You will need a POSIX-compliant [system](https://en.wikipedia.org/wiki/POSIX) as well as a modern C++ compiler to complete this lab.
-You can use gcc or clang natively if you are running Linux or macOS.
-On Windows, the easiest way to setup your system is to use a Devcontainer, using the instruction below.
+This lab is not platform-specific and can be completed with any installation of Swift 6.3+.
+You can follow the official instructions to install Swift on [Linux](https://www.swift.org/install/linux/), [macOS](https://www.swift.org/install/macos/), and [Windows](https://www.swift.org/install/windows/).
+Alternatively, you can follow the instructions on [this page](https://docs.swift.org/latest/documentation/userdocs/remote-dev/) to run Swift via a DevContainer.
+In any case, **be sure to install Swift 6.3 or higher**!
 
-1. Install [Docker Desktop](https://www.docker.com/) and [Visual Studio Code (VS Code)](https://code.visualstudio.com) on your machine.
-2. In VS Code, install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
-3. Download (or clone using git) the following repository: [https://github.com/ISC-HEI/202.1-os](https://github.com/ISC-HEI/202.1-os).
-4. Open the `lab-5` folder of this repository with VS Code and click on "Reopen in Container" in the bottom-right dialogue. If the dialog does not show, you can press `Ctrl+Shift+P` to open the command palette and type "Reopen in Container".
-   VS Code will reopen and start a Docker container configured to run Linux on a 64-bit ARM architecture (emulated if necessary).
-
-> Make sure to open the lab folder **directly** to let VS Code detect that a Docker container has been configured.
-
-Whether or not you are using Docker, you can check if your system is ready by compiling the existing code with one of the following command:
-
-If you are using clang:
-```bash
-clang++ --version
-```
-
-If you are using GCC:
-```bash
-g++ --version
-```
-
-In either case, the command should print the version of your C++ compiler.
-Since this lab will use fairly old APIs, any reasonably recent version will do.
-
-> You are free to complete this lab on Windows but remember that your submission will be tested on a Unix-like POSIX-compliant plateform.
-> Consequently, make sure not to use any Windows-specific function, such as some of those found in `winsock.h`.
-
-# High-level latch
-
-A latch (aka a flip-flop) is a circuit that can store a bit of information and modify its state when it receives a particular signal.
-Taking inspiration from this concept, your task is to implement a small TCP server that can store an arbitrary blob of data and release that data before storing a different blob when a connection opens.
-
-More specifically, your task is to use the POSIX API to implement a server application for Unix-like systems that satisfies the following specification:
-
-* The server takes as a command-line argument the name of some text file on which the user has read/write access.
-* The server continously listens to incoming connections on the port 5050.
-* When a connection is opened, the server waits to receive data from the client.
-* Once the client is done sending:
-  1. the server sends the contents of the file that was taken as a command-line argument;
-  2. the server replaces that contents with the client's data if and only if it received at least one byte; and
-  3. the server closes the connection.
-
-For example, assuming the file `fruits.txt` contains the string `apple`, a valid implementation will behave as follows:
+If your system is properly configured, you should be able to run the following command:
 
 ```bash
-./latch fruits.txt &
-echo "orange" | nc localhost 5050
-apple
-echo "apricot" | nc localhost 5050
-orange
-echo "melon" | nc localhost 5050
-apricot
+swift --version
 ```
 
-## Task
+If everything is configured properly, you should be able to compile and run the Swift package contained in this directory.
+Download (or clone using git) the following repository: [https://github.com/ISC-HEI/202.1-os](https://github.com/ISC-HEI/202.1-os) and navigate to the `lab-4` directory.
+Then, run the following commands:
 
-Implement a server that satisfies the above specification in a file `latch.cc`.
-Your program should compile using the following command:
-
+```bash
+swift build
+swift test
 ```
-c++ -o latch -std=c++23 latch.cc
+
+# Fire! Fire!
+
+*Looking forward to hearing from you.*
+
+Open the file `Sources/PetriNet/PetriNet.swift`, which implements part of a small library to design and simulate Petri nets, and locate the following functions:
+
+- `fireable(_:)` returns whether a sequence of transition is fireable.
+- `fire(_:)` returns the marking obtained after firing a sequence of transitions.
+
+Your goal is to implement these functions, taking inspiration and/or reusing their respective overloads.
+
+To test your result, add new members in `Tests/PetriNetTests/PetriNetTests.swift` that exercise your implementation.
+You can run then with the following command:
+
+```bash
+swift test
 ```
 
-> Note that you do not have to use any C++23 feature.
-> Simply keep in mind that your submission will be compiled and teste using the above command.
+# Model checking
 
-You can use netcat to test your server as already shown aboce.
+Locate the function `sequence(from:toMarkingSatisfying:)`, which returns a sequence of transition leading to a marking satisfying a particular predicate.
+This function can be used to implement a rudimentary model checker.
+For example:
 
-## Submission
+```swift
+/// Creates a simple Petri net with a lock.
+func model() -> PetriNet {
+  var m = PetriNet(placeCount: 3, transitionCount: 4)
+  m[transition: 0, place: 0].produced = 1 // t0 -> p0
+  m[transition: 0, place: 2].consumed = 1 // p2 -> t0
+  m[transition: 1, place: 0].consumed = 1 // p0 -> t1
+  m[transition: 1, place: 2].produced = 1 // t1 -> p2
+  m[transition: 2, place: 1].produced = 1 // t2 -> p1
+  m[transition: 2, place: 2].consumed = 1 // p2 -> t2
+  m[transition: 3, place: 1].consumed = 1 // p1 -> t3
+  m[transition: 3, place: 2].produced = 1 // t3 -> p2
+}
 
-Once you're done, submit your `latch.cc` file on [isc.hevs.ch/learn](https://isc.hevs.ch/learn).
-Your lab will be graded on the basis of the correctness and clarity of your implementation.
+/// Returns `true` if `m` describes a racy model.
+///
+/// The result is `true` if both `p0` and `p1` contains a token.
+func isRacy(_ m: Marking) -> Bool {
+  m[0] > 0 && m[1] > 0
+}
 
-## Toubleshooting
-
-If you are using Docker and are unable to connect to your server, it may be because your container is not forwarding ports and/or because VSCode is blocking network traffic.
-Try to update your `devcontainer.json` as follows:
-
-```json
-{
-  "name": "Lightweight Linux",
-  "build": {
-    "dockerfile": "Dockerfile",
-  },
+if let s = model.sequence(from: [0, 0, 2], toMarkingSatisfying: isRacy(_:)) {
+  print("The model shows a data race!")
+  print("Here's the proof: \(s)")
+} else {
+  print("The model does not show any race.")
 }
 ```
 
-Further troubleshooting information is available on [this page](https://github.com/orgs/community/discussions/13473).
+Your goal is to implement this functions.
+
+To test your result, add new members in `Tests/PetriNetTests/PetriNetTests.swift` that exercise your implementation.
+You can run then with the following command:
+
+```bash
+swift test
+```
