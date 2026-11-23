@@ -82,6 +82,7 @@ func model() -> PetriNet {
   m[transition: 2, place: 2].consumed = 1 // p2 -> t2
   m[transition: 3, place: 1].consumed = 1 // p1 -> t3
   m[transition: 3, place: 2].produced = 1 // t3 -> p2
+  return m
 }
 
 /// Returns `true` if `m` describes a racy model.
