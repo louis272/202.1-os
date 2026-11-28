@@ -54,13 +54,6 @@ public struct PetriNet: Sendable {
     (0 ..< placeCount).allSatisfy({ (p) in self[transition: t, place: p].consumed <= m[p] })
   }
 
-  /// Returns `true` iff `s` is fireable from `m`.
-  ///
-  /// - Requires: `m` assigns each place in `self`.
-  public func fireable<S: Sequence<Int>>(_ s: S, from m: Marking) -> Bool {
-    todo()
-  }
-
   /// Returns the marking obtained after firing `t` from `m`.
   ///
   /// - Requires: `m` assigns each place in `self` and `t` is fireable from `m`.
@@ -99,8 +92,66 @@ public struct PetriNet: Sendable {
   /// Returns the set of markings reachable from `m`.
   ///
   /// - Requires: `self` is bounded.
-  public func states() async -> ReachabilityGraph {
-    todo()
+  public func states(from m: Marking) async -> ReachabilityGraph {
+    var graph: ReachabilityGraph = ReachabilityGraph()
+    var queue: [Marking] = [m]
+    var visited: Set<Marking> = [m]
+    var index = 0
+
+    while index < queue.count {
+      let current = queue[index]
+      index += 1
+
+      for (t, next) in await successors(current) {
+        if visited.insert(next).inserted {
+          queue.append(next)
+        }
+        graph.insertEdge(from: current, to: next, labeledBy: t)
+      }
+    }
+
+    return graph
+  }
+
+  /// Returns the set of markings reachable from `m`.
+  ///
+  /// - Requires: `self` is bounded.
+  public func statesConc(from m: Marking) async -> ReachabilityGraph {
+    var graph: ReachabilityGraph = ReachabilityGraph()
+    var visited: Set<Marking> = [m]
+    var parents: [Marking] = [m]
+
+    while !parents.isEmpty {
+      let intermediaries = await withTaskGroup(of: (Marking, [ReachabilityGraph.Successor]).self) {
+        (g) in
+        for parent in parents {
+          g.addTask {
+            (parent, await successors(parent))
+          }
+        }
+
+        var results: [(Marking, [ReachabilityGraph.Successor])] = []
+        for await e in g {
+          results.append(e)
+        }
+
+        return results
+      }
+
+      var nextParents: [Marking] = []
+      for (parent, successors) in intermediaries {
+        for (t, child) in successors {
+          if visited.insert(child).inserted {
+            nextParents.append(child)
+          }
+          graph.insertEdge(from: parent, to: child, labeledBy: t)
+        } 
+      }
+
+      parents = nextParents
+    }
+
+    return graph
   }
 
   /// Returns the liveness of `t` for `m`.
